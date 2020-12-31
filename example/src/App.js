@@ -1,12 +1,12 @@
 import React, { Component } from 'react'
 
-import ExampleComponent from 'react-habboicons'
-
+import { CurrencyDiamond } from 'react-habboicons'
 export default class App extends Component {
   render () {
     return (
       <div>
-        <ExampleComponent text='Modern React component module' />
+        aaaa
+        <CurrencyDiamond className="w-5 h-5" />
       </div>
     )
   }
