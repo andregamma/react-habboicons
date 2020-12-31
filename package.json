@@ -1,7 +1,7 @@
 {
   "name": "react-habboicons",
   "version": "1.0.1",
-  "description": "",
+  "description": "A Habbo icons package: project for training to create libraries in React.",
   "author": "andregamma",
   "license": "MIT",
   "repository": "andregamma/react-habboicons",
