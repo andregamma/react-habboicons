@@ -8,6 +8,11 @@
 
 ```bash
 npm install --save react-habboicons
+
+# or use yarn:
+
+yarn add react-habboicons
+
 ```
 
 ## Usage
