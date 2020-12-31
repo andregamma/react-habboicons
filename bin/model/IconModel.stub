@@ -1,0 +1,10 @@
+import * as React from "react";
+import {{iconName}} from "../images/{{fileName}}.{{fileType}}"
+
+const {{IconName}} = ({ ...props }) => {
+  return (
+    <img src={{{iconName}}} alt="{{IconName}}" {...props} />
+  );
+}
+
+export default {{IconName}};
