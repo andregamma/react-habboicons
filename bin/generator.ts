@@ -13,33 +13,50 @@ interface FileToIcon {
 }
 
 export class Generator {
-  private readonly IMAGES_PATH = path.resolve('src', 'images')
+  private readonly IMAGES_DIR = path.resolve('src', 'images')
   private readonly OUTPUT_DIR = path.resolve('src', 'icons')
+  private readonly EXPORT_INDEX_DIR = path.resolve('src');
+
+  private stub: string = '';
+
+  private exports: string[] = [];
 
   public async generate() {
     try {
       const iconsMap = await this.getIcons();
       const parsedIconMap = this.parseIconMap(iconsMap);
-      this.generateStub(parsedIconMap);
-      // console.log(parsedIconMap)
+      await this.generateStub(parsedIconMap);
+      this.generateExportIndex()
+
+      console.log('Todos os icones foram gerados.')
     } catch (e) {
       throw new Error(e)
     }
   }
 
-  private generateStub(iconMap: IconMap) {
-    const keys = Object.keys(iconMap) as Array<keyof typeof iconMap>
-    keys.forEach((iconType) => {
-      const mapped: FileToIcon[] = iconMap[iconType];
+  private generateExportIndex() {
+    const str = this.exports.join('\n')
+    const filePath = path.resolve(this.EXPORT_INDEX_DIR, 'index.tsx')
 
-      mapped.forEach((mappedIcon) => {
+    fs.writeFileSync(filePath, str)
+    console.log('Exportações escritas')
+  }
+
+  private async generateStub(iconMap: IconMap) {
+    const keys = Object.keys(iconMap) as Array<keyof typeof iconMap>
+    for (const iconKey of keys) {
+      const mapped: FileToIcon[] = iconMap[iconKey];
+
+      for (const mappedIcon of mapped) {
         const stub = this.replaceInStub(mappedIcon)
-        this.writeOutput(mappedIcon.iconName, mappedIcon.iconType, stub);
-      })
-    })
+        await this.writeOutput(mappedIcon, stub);
+      }
+    }
   }
 
   private replaceInStub({ fileName, fileType, iconName, iconType }: FileToIcon) {
+    this.loadStub();
+
     return this.stub
       .replace(/{{fileName}}/g, fileName)
       .replace(/{{fileType}}/g, fileType)
@@ -48,21 +65,33 @@ export class Generator {
       .replace(/{{IconType}}/g, this.capitalizeFirst(iconType))
   }
 
-  private writeOutput(fileName: string, categoryName: string, data: string): void {
-    const fullpath = path.resolve(this.OUTPUT_DIR, `${this.capitalizeFirst(categoryName) + fileName}.tsx`)
-    console.log('Escrevendo arquivo:', fileName)
-    fs.writeFile(fullpath, data, (err: any) => {
-      if (err) {
-        console.log('Não foi possível escrever:', fileName, '->', err.message)
-      } else {
-        console.log(`[OK] ${fileName}.tsx`)
-      }
-    });
+  private writeOutput(icon: FileToIcon, data: string): Promise<void> {
+    const filename = this.capitalizeFirst(icon.iconType) + icon.iconName
+    const fullpath = path.resolve(this.OUTPUT_DIR, `${filename}.tsx`)
+    console.log('Escrevendo arquivo:', filename)
+    return new Promise((resolve, reject) => {
+      fs.writeFile(fullpath, data, (err: any) => {
+        if (err) {
+          console.log('Não foi possível escrever:', icon.fileName, '->', err.message)
+          reject(err)
+        } else {
+          console.log(`[OK] ${filename}.tsx`)
+          this.addToExport(icon)
+          resolve()
+        }
+      });
+    })
+  }
+
+  private addToExport({ iconType, iconName }: FileToIcon)  {
+    const component = this.capitalizeFirst(iconType) + iconName;
+
+    this.exports.push(`export { default as ${component} } from './icons/${component}'`)
   }
 
   private getIcons(): Promise<string[]> {
     return new Promise(((resolve, reject) => {
-      fs.readdir(this.IMAGES_PATH, (error: any, dir: string[]) => {
+      fs.readdir(this.IMAGES_DIR, (error: any, dir: string[]) => {
         if (error) {
           return reject(error);
         }
@@ -114,8 +143,10 @@ export class Generator {
     return { iconName, iconType, fileType, fileName }
   }
 
-  private get stub() {
-    return fs.readFileSync(path.resolve(__dirname, 'model', 'IconModel.stub'), 'utf-8')
+  private loadStub() {
+    if (!this.stub) {
+      this.stub = fs.readFileSync(path.resolve(__dirname, 'model', 'IconModel.stub'), 'utf-8')
+    }
   }
 
   private capitalizeFirst(str: string): string {
