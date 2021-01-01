@@ -14,7 +14,7 @@ interface FileToIcon {
 
 export class Generator {
   private readonly IMAGES_PATH = path.resolve('src', 'images')
-  private readonly OUTPUT_DIR = path.resolve(__dirname, 'teste')
+  private readonly OUTPUT_DIR = path.resolve('src', 'icons')
 
   public async generate() {
     try {
@@ -34,21 +34,22 @@ export class Generator {
 
       mapped.forEach((mappedIcon) => {
         const stub = this.replaceInStub(mappedIcon)
-        this.writeOutput(mappedIcon.iconName, stub);
+        this.writeOutput(mappedIcon.iconName, mappedIcon.iconType, stub);
       })
     })
   }
 
-  private replaceInStub({ fileName, fileType, iconName }: FileToIcon) {
+  private replaceInStub({ fileName, fileType, iconName, iconType }: FileToIcon) {
     return this.stub
       .replace(/{{fileName}}/g, fileName)
       .replace(/{{fileType}}/g, fileType)
       .replace(/{{iconName}}/g, iconName.toLowerCase())
       .replace(/{{IconName}}/g, this.capitalizeFirst(iconName))
+      .replace(/{{IconType}}/g, this.capitalizeFirst(iconType))
   }
 
-  private writeOutput(fileName: string, data: string): void {
-    const fullpath = path.resolve(this.OUTPUT_DIR, `${fileName}.tsx`)
+  private writeOutput(fileName: string, categoryName: string, data: string): void {
+    const fullpath = path.resolve(this.OUTPUT_DIR, `${this.capitalizeFirst(categoryName) + fileName}.tsx`)
     console.log('Escrevendo arquivo:', fileName)
     fs.writeFile(fullpath, data, (err: any) => {
       if (err) {
